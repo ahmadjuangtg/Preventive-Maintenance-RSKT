@@ -1,0 +1,17 @@
+{
+  "name": "Checklist PM RSUD Kab. Tangerang",
+  "short_name": "PM Checklist",
+  "description": "Aplikasi Mobile Checklist Preventive Maintenance & Rekap Laporan RSUD Kabupaten Tangerang",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#3685c0",
+  "theme_color": "#3685c0",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
