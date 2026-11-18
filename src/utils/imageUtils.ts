@@ -1,7 +1,76 @@
+export interface CompressImageOptions {
+  stampTimestamp?: boolean;
+  label?: string;
+}
+
+function formatPhotoTimestamp(date = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(
+    date.getHours()
+  )}:${pad(date.getMinutes())}:${pad(date.getSeconds())} WIB`;
+}
+
+function drawRoundedRectPath(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number
+): void {
+  const radius = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.arcTo(x + w, y, x + w, y + h, radius);
+  ctx.arcTo(x + w, y + h, x, y + h, radius);
+  ctx.arcTo(x, y + h, x, y, radius);
+  ctx.arcTo(x, y, x + w, y, radius);
+  ctx.closePath();
+}
+
+function drawTimestampWatermark(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  label?: string
+): void {
+  const stampText = formatPhotoTimestamp();
+  const text = label?.trim() ? `${label.trim()} • ${stampText}` : stampText;
+  const fontSize = Math.max(13, Math.min(28, Math.round(width * 0.022)));
+  const padX = Math.round(fontSize * 0.65);
+  const padY = Math.round(fontSize * 0.42);
+  const margin = Math.max(10, Math.round(width * 0.018));
+
+  ctx.save();
+  ctx.font = `700 ${fontSize}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
+  const metrics = ctx.measureText(text);
+  const maxBoxWidth = width - margin * 2;
+  const boxW = Math.min(maxBoxWidth, Math.ceil(metrics.width) + padX * 2);
+  const boxH = fontSize + padY * 2;
+  const boxX = width - margin - boxW;
+  const boxY = height - margin - boxH;
+
+  drawRoundedRectPath(ctx, boxX, boxY, boxW, boxH, Math.round(fontSize * 0.42));
+  ctx.fillStyle = 'rgba(10, 25, 47, 0.78)';
+  ctx.fill();
+  ctx.lineWidth = Math.max(1, Math.round(fontSize * 0.08));
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+  ctx.stroke();
+
+  ctx.fillStyle = '#fde047';
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'right';
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+  ctx.shadowBlur = 4;
+  ctx.fillText(text, width - margin - padX, boxY + boxH / 2, maxBoxWidth - padX * 2);
+  ctx.restore();
+}
+
 export async function compressImage(
   file: File,
   maxWidth = 1280,
-  quality = 0.82
+  quality = 0.82,
+  options?: CompressImageOptions
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const objectUrl = URL.createObjectURL(file);
@@ -25,6 +94,9 @@ export async function compressImage(
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, width, height);
         ctx.drawImage(img, 0, 0, width, height);
+        if (options?.stampTimestamp) {
+          drawTimestampWatermark(ctx, width, height, options.label);
+        }
         const dataUrl = canvas.toDataURL('image/jpeg', quality);
         URL.revokeObjectURL(objectUrl);
         resolve(dataUrl);

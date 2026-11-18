@@ -29,11 +29,13 @@ import type {
   ChecklistSection,
   ChecklistSubGroup,
   PhotoAttachment,
+  PhotoTimestampMode,
   ShiftType,
   StatusMode,
 } from '../types/checklist';
 import { formatIndonesianDate } from '../utils/dateUtils';
 import { PhotoStrip, PhotoUploaderButton } from './PhotoStrip';
+import { PhotoTimestampSelector } from './TimestampPromptModal';
 
 type FilterMode = 'all' | 'not_ok' | 'has_photo';
 
@@ -134,9 +136,12 @@ interface ChecklistTabProps {
   onDeleteSection: (sectionId: string) => void;
   onRestoreFactoryTemplate: () => void;
   onPreviewPhoto: (photo: PhotoAttachment, title: string) => void;
+  photoTimestampMode: PhotoTimestampMode;
+  onChangePhotoTimestampMode: (mode: PhotoTimestampMode) => void;
+  onConfirmTimestamp: (files: FileList) => Promise<boolean | null>;
 }
 
-const SHIFTS: ShiftType[] = ['Pagi', 'Siang', 'Sore', 'Malam'];
+const SHIFTS: ShiftType[] = ['PAGI', 'SORE', 'MALAM'];
 
 function suggestNextItemCode(items: ChecklistItem[]): string {
   const numericCodes = items
@@ -192,6 +197,9 @@ export function ChecklistTab({
   onDeleteSection,
   onRestoreFactoryTemplate,
   onPreviewPhoto,
+  photoTimestampMode,
+  onChangePhotoTimestampMode,
+  onConfirmTimestamp,
 }: ChecklistTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
@@ -590,6 +598,7 @@ export function ChecklistTab({
               <PhotoUploaderButton
                 compact
                 label=""
+                onConfirmTimestamp={onConfirmTimestamp}
                 onAddPhotos={(photos, rawFiles) =>
                   onAddItemPhotos(
                     section.id,
@@ -709,15 +718,15 @@ export function ChecklistTab({
 
         {showMetaEditor && (
           <div className="space-y-2.5 border-t border-slate-100 px-4 pt-3 pb-3.5">
-            <div className="grid grid-cols-4 gap-1.5">
+            <div className="grid grid-cols-3 gap-1.5">
               {SHIFTS.map((s) => (
                 <button
                   key={s}
                   type="button"
                   onClick={() => onUpdateMeta({ shift: s })}
-                  className={`rounded-lg py-1.5 text-xs font-bold transition ${
+                  className={`rounded-lg py-1.5 text-xs font-bold tracking-wide transition ${
                     report.shift === s
-                      ? 'bg-[#3685c0] text-white shadow-xs'
+                      ? 'bg-[#134b8a] text-white shadow-xs'
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}
                 >
@@ -858,6 +867,12 @@ export function ChecklistTab({
           </div>
         </div>
 
+        <PhotoTimestampSelector
+          mode={photoTimestampMode}
+          onChangeMode={onChangePhotoTimestampMode}
+          label="Timestamp di Foto Upload:"
+        />
+
         {isManageMode && (
           <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-medium text-amber-900">
             <strong>Mode Edit Daftar Aktif:</strong> Anda bisa menambah, ubah
@@ -997,6 +1012,7 @@ export function ChecklistTab({
                       <PhotoUploaderButton
                         compact
                         label=""
+                        onConfirmTimestamp={onConfirmTimestamp}
                         onAddPhotos={(photos, rawFiles) =>
                           onAddItemPhotos(
                             section.id,
@@ -1172,6 +1188,7 @@ export function ChecklistTab({
                   <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 px-2.5 py-2">
                     <PhotoUploaderButton
                       label="Foto Bagian"
+                      onConfirmTimestamp={onConfirmTimestamp}
                       onAddPhotos={(photos) =>
                         onAddSectionPhotos(section.id, photos)
                       }
@@ -1353,6 +1370,7 @@ export function ChecklistTab({
                           <PhotoUploaderButton
                             compact
                             label="+ Foto"
+                            onConfirmTimestamp={onConfirmTimestamp}
                             onAddPhotos={(photos) =>
                               onAddSubGroupPhotos(section.id, sg.id, photos)
                             }

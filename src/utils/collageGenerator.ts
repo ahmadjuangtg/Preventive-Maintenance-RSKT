@@ -454,15 +454,15 @@ export async function generateCollageImage(
   ctx.fillStyle = '#3685c0';
   ctx.fillRect(0, 0, canvasWidth, totalHeight);
 
-  // Header Banner
+  // Header Banner — Modern Deep Blue
   const headerGrad = ctx.createLinearGradient(0, 0, canvasWidth, headerH);
-  headerGrad.addColorStop(0, '#163d5c');
-  headerGrad.addColorStop(0.6, '#235e8c');
-  headerGrad.addColorStop(1, '#3685c0');
+  headerGrad.addColorStop(0, '#08203e');
+  headerGrad.addColorStop(0.55, '#134b8a');
+  headerGrad.addColorStop(1, '#1e78e8');
   ctx.fillStyle = headerGrad;
   ctx.fillRect(0, 0, canvasWidth, headerH);
 
-  ctx.fillStyle = '#7dd3fc';
+  ctx.fillStyle = '#38bdf8';
   ctx.fillRect(0, 0, canvasWidth, 6);
 
   const headerTag =
@@ -476,7 +476,7 @@ export async function generateCollageImage(
       ? 'PREVENTIVE MAINTENANCE • RINGKASAN LIST STATUS CHECKLIST'
       : 'PREVENTIVE MAINTENANCE • RESUME CHECKLIST HARIAN';
 
-  ctx.fillStyle = '#bae6fd';
+  ctx.fillStyle = '#a5f3fc';
   ctx.font = 'bold 14px system-ui, -apple-system, sans-serif';
   ctx.fillText(headerTag, padX, 42);
 
@@ -492,7 +492,7 @@ export async function generateCollageImage(
     82
   );
 
-  ctx.fillStyle = '#cbd5e1';
+  ctx.fillStyle = '#e0f2fe';
   ctx.font = '600 18px system-ui, -apple-system, sans-serif';
   const inspectorText = report.inspector.trim()
     ? `   •   Petugas: ${report.inspector.trim()}`
@@ -503,41 +503,39 @@ export async function generateCollageImage(
     116
   );
 
-  // KPI Pills
+  // KPI Pills — High Contrast OK (Green) & NOT OK (Red)
   const kpis = [
     {
       label: 'TOTAL ITEM',
       value: String(stats.totalItems),
-      bg: 'rgba(255,255,255,0.12)',
-      border: 'rgba(255,255,255,0.22)',
-      textColor: '#f8fafc',
+      bg: 'rgba(255,255,255,0.16)',
+      border: 'rgba(255,255,255,0.3)',
+      labelColor: '#e2e8f0',
+      textColor: '#ffffff',
     },
     {
       label: 'OK / AKTIF',
       value: String(stats.okCount),
-      bg: 'rgba(16,185,129,0.22)',
-      border: 'rgba(52,211,153,0.55)',
-      textColor: '#6ee7b7',
+      bg: '#059669',
+      border: '#6ee7b7',
+      labelColor: '#ecfdf5',
+      textColor: '#ffffff',
     },
     {
       label: 'NOT OK',
       value: String(stats.notOkCount),
-      bg:
-        stats.notOkCount > 0
-          ? 'rgba(239,68,68,0.28)'
-          : 'rgba(255,255,255,0.1)',
-      border:
-        stats.notOkCount > 0
-          ? 'rgba(248,113,113,0.65)'
-          : 'rgba(255,255,255,0.2)',
-      textColor: stats.notOkCount > 0 ? '#fca5a5' : '#cbd5e1',
+      bg: stats.notOkCount > 0 ? '#dc2626' : '#e11d48',
+      border: stats.notOkCount > 0 ? '#fde68a' : '#fda4af',
+      labelColor: '#fff1f2',
+      textColor: '#ffffff',
     },
     {
       label: 'FOTO BUKTI',
       value: String(stats.totalPhotos),
-      bg: 'rgba(14,165,233,0.22)',
-      border: 'rgba(56,189,248,0.55)',
-      textColor: '#7dd3fc',
+      bg: 'rgba(14,165,233,0.28)',
+      border: 'rgba(125,211,252,0.65)',
+      labelColor: '#e0f2fe',
+      textColor: '#ffffff',
     },
   ];
 
@@ -554,7 +552,7 @@ export async function generateCollageImage(
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
-    ctx.fillStyle = '#cbd5e1';
+    ctx.fillStyle = kpi.labelColor;
     ctx.font = 'bold 11px system-ui, -apple-system, sans-serif';
     ctx.fillText(kpi.label, px + 14, py + 20);
 

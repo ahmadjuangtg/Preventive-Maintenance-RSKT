@@ -5,9 +5,11 @@ import type {
   ChecklistReport,
   FlattenedPhotoEntry,
   PhotoAttachment,
+  PhotoTimestampMode,
 } from '../types/checklist';
 import { formatTimeNow } from '../utils/dateUtils';
 import { compressImage } from '../utils/imageUtils';
+import { PhotoTimestampSelector } from './TimestampPromptModal';
 
 export interface UploadTargetOption {
   value: string; // "section:A" | "subgroup:A:A-b" | "item:A:A-a" | "item:A:A-b:A-b-1"
@@ -33,6 +35,9 @@ interface GalleryTabProps {
   ) => void;
   onRemovePhotoEntry: (entry: FlattenedPhotoEntry) => void;
   onPreviewPhoto: (photo: PhotoAttachment, title: string) => void;
+  photoTimestampMode: PhotoTimestampMode;
+  onChangePhotoTimestampMode: (mode: PhotoTimestampMode) => void;
+  onConfirmTimestamp: (files: FileList) => Promise<boolean | null>;
 }
 
 function buildTargetOptions(
@@ -91,6 +96,9 @@ export function GalleryTab({
   onAssignPhotoToTarget,
   onRemovePhotoEntry,
   onPreviewPhoto,
+  photoTimestampMode,
+  onChangePhotoTimestampMode,
+  onConfirmTimestamp,
 }: GalleryTabProps) {
   const photos = useMemo(() => flattenPhotos(report), [report]);
   const targetOptions = useMemo(() => buildTargetOptions(report), [report]);
@@ -118,12 +126,17 @@ export function GalleryTab({
     mode: 'direct' | 'batch'
   ) => {
     if (!files || files.length === 0) return;
-    setIsProcessing(true);
     try {
+      const shouldStamp = await onConfirmTimestamp(files);
+      if (shouldStamp === null) return;
+
+      setIsProcessing(true);
       const time = formatTimeNow();
       if (mode === 'direct') {
         for (const file of Array.from(files)) {
-          const dataUrl = await compressImage(file);
+          const dataUrl = await compressImage(file, 1280, 0.82, {
+            stampTimestamp: shouldStamp,
+          });
           onAssignPhotoToTarget(
             selectedTarget,
             {
@@ -138,7 +151,9 @@ export function GalleryTab({
       } else {
         const nextPending: PendingBatchPhoto[] = [];
         for (const file of Array.from(files)) {
-          const dataUrl = await compressImage(file);
+          const dataUrl = await compressImage(file, 1280, 0.82, {
+            stampTimestamp: shouldStamp,
+          });
           nextPending.push({
             id: `pending-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
             dataUrl,
@@ -236,6 +251,12 @@ export function GalleryTab({
             multiple
             className="hidden"
             onChange={(e) => handleFilesSelected(e.target.files, 'batch')}
+          />
+
+          <PhotoTimestampSelector
+            mode={photoTimestampMode}
+            onChangeMode={onChangePhotoTimestampMode}
+            label="Timestamp di Foto:"
           />
 
           <div className="grid grid-cols-2 gap-2">

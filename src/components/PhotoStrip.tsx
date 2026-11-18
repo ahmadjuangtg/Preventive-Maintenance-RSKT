@@ -6,14 +6,18 @@ import { compressImage } from '../utils/imageUtils';
 
 interface PhotoUploaderButtonProps {
   onAddPhotos: (newPhotos: PhotoAttachment[], rawFiles?: File[]) => void;
+  onConfirmTimestamp?: (files: FileList) => Promise<boolean | null>;
   compact?: boolean;
   label?: string;
+  stampTimestamp?: boolean;
 }
 
 export function PhotoUploaderButton({
   onAddPhotos,
+  onConfirmTimestamp,
   compact = false,
   label = 'Foto',
+  stampTimestamp = true,
 }: PhotoUploaderButtonProps) {
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -21,12 +25,19 @@ export function PhotoUploaderButton({
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
-    setIsProcessing(true);
+    const fileArr = Array.from(files);
     try {
-      const fileArr = Array.from(files);
+      const shouldStamp = onConfirmTimestamp
+        ? await onConfirmTimestamp(files)
+        : stampTimestamp;
+      if (shouldStamp === null) return;
+
+      setIsProcessing(true);
       const processed: PhotoAttachment[] = [];
       for (const file of fileArr) {
-        const dataUrl = await compressImage(file);
+        const dataUrl = await compressImage(file, 1280, 0.82, {
+          stampTimestamp: shouldStamp,
+        });
         processed.push({
           id: `photo-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
           dataUrl,

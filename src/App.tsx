@@ -12,10 +12,12 @@ import { HistoryTab } from './components/HistoryTab';
 import { LoadingOverlay } from './components/LoadingOverlay';
 import { PhotoLightbox } from './components/PhotoLightbox';
 import { ReportTab } from './components/ReportTab';
+import { TimestampPromptModal } from './components/TimestampPromptModal';
 import {
   createDefaultReport,
   getReportStats,
   getToggleTargetStatus,
+  normalizeShift,
   resequenceSections,
 } from './data/checklistTemplate';
 import { createSampleReport } from './data/sampleReport';
@@ -25,6 +27,7 @@ import type {
   ChecklistSection,
   FlattenedPhotoEntry,
   PhotoAttachment,
+  PhotoTimestampMode,
   StatusMode,
 } from './types/checklist';
 import { formatSlashDate, getTodayIsoDate } from './utils/dateUtils';
@@ -46,6 +49,15 @@ import {
 
 type ActiveTab = 'checklist' | 'gallery' | 'report' | 'history';
 
+const TIMESTAMP_MODE_STORAGE_KEY = 'pm-rskt-photo-timestamp-mode';
+
+function normalizeReportShift(item: ChecklistReport): ChecklistReport {
+  return {
+    ...item,
+    shift: normalizeShift(item.shift),
+  };
+}
+
 export function App() {
   const [report, setReport] = useState<ChecklistReport>(() =>
     createDefaultReport()
@@ -62,6 +74,21 @@ export function App() {
   const [isLoadingSample, setIsLoadingSample] = useState(false);
   const [reportKey, setReportKey] = useState(0);
   const [toast, setToast] = useState<string | null>(null);
+  const [photoTimestampMode, setPhotoTimestampMode] =
+    useState<PhotoTimestampMode>(() => {
+      try {
+        const saved = window.localStorage.getItem(TIMESTAMP_MODE_STORAGE_KEY);
+        if (saved === 'ask' || saved === 'on' || saved === 'off') return saved;
+      } catch {
+        // Ignore localStorage restrictions
+      }
+      return 'ask';
+    });
+  const [timestampPrompt, setTimestampPrompt] = useState<{
+    fileCount: number;
+    previewUrl: string;
+    resolve: (result: boolean | null) => void;
+  } | null>(null);
   const [lightboxState, setLightboxState] = useState<{
     photo: PhotoAttachment;
     title: string;
@@ -79,6 +106,63 @@ export function App() {
     }, 3000);
   }, []);
 
+  const handleChangePhotoTimestampMode = useCallback(
+    (mode: PhotoTimestampMode) => {
+      setPhotoTimestampMode(mode);
+      try {
+        window.localStorage.setItem(TIMESTAMP_MODE_STORAGE_KEY, mode);
+      } catch {
+        // Ignore localStorage restrictions
+      }
+      const modeLabel =
+        mode === 'ask'
+          ? 'Tanya tiap tambah foto'
+          : mode === 'on'
+          ? 'Selalu tambah timestamp di foto'
+          : 'Foto tanpa timestamp';
+      notify(`Pengaturan timestamp foto: ${modeLabel}`);
+    },
+    [notify]
+  );
+
+  const requestPhotoTimestamp = useCallback(
+    (files: FileList): Promise<boolean | null> => {
+      if (photoTimestampMode === 'on') return Promise.resolve(true);
+      if (photoTimestampMode === 'off') return Promise.resolve(false);
+      const firstFile = files[0];
+      if (!firstFile) return Promise.resolve(null);
+      const previewUrl = URL.createObjectURL(firstFile);
+      return new Promise<boolean | null>((resolve) => {
+        setTimestampPrompt({
+          fileCount: files.length,
+          previewUrl,
+          resolve,
+        });
+      });
+    },
+    [photoTimestampMode]
+  );
+
+  const handleConfirmTimestampPrompt = useCallback(
+    (stampTimestamp: boolean, remember: boolean) => {
+      if (!timestampPrompt) return;
+      URL.revokeObjectURL(timestampPrompt.previewUrl);
+      if (remember) {
+        handleChangePhotoTimestampMode(stampTimestamp ? 'on' : 'off');
+      }
+      timestampPrompt.resolve(stampTimestamp);
+      setTimestampPrompt(null);
+    },
+    [handleChangePhotoTimestampMode, timestampPrompt]
+  );
+
+  const handleCancelTimestampPrompt = useCallback(() => {
+    if (!timestampPrompt) return;
+    URL.revokeObjectURL(timestampPrompt.previewUrl);
+    timestampPrompt.resolve(null);
+    setTimestampPrompt(null);
+  }, [timestampPrompt]);
+
   useEffect(() => {
     let active = true;
     loadSharedState().then((shared) => {
@@ -89,6 +173,7 @@ export function App() {
       if (shared.draft && Array.isArray(shared.draft.sections)) {
         setReport({
           ...shared.draft,
+          shift: normalizeShift(shared.draft.shift),
           sections: resequenceSections(shared.draft.sections),
         });
       } else if (shared.customTemplate) {
@@ -100,7 +185,7 @@ export function App() {
           ),
         });
       }
-      setHistory(shared.history);
+      setHistory(shared.history.map(normalizeReportShift));
       setIsHydrated(true);
     });
     return () => {
@@ -895,7 +980,7 @@ export function App() {
         saveReportToHistory(report),
         new Promise<void>((resolve) => window.setTimeout(resolve, 550)),
       ]);
-      setHistory(result.history);
+      setHistory(result.history.map(normalizeReportShift));
       notify(
         result.syncedToServer
           ? 'Laporan tersimpan ke server bersama (bisa diakses semua orang)!'
@@ -910,7 +995,7 @@ export function App() {
     setIsRefreshingHistory(true);
     try {
       const list = await loadReportHistory();
-      setHistory(list);
+      setHistory(list.map(normalizeReportShift));
       notify(`Riwayat disinkronkan (${list.length} laporan)`);
     } finally {
       setIsRefreshingHistory(false);
@@ -922,7 +1007,7 @@ export function App() {
     setIsRefreshingHistory(true);
     void loadReportHistory()
       .then((list) => {
-        setHistory(list);
+        setHistory(list.map(normalizeReportShift));
       })
       .finally(() => {
         setIsRefreshingHistory(false);
@@ -931,9 +1016,10 @@ export function App() {
 
   const handleLoadFromHistory = useCallback(
     (saved: ChecklistReport) => {
-      setReport(saved);
+      const normalized = normalizeReportShift(saved);
+      setReport(normalized);
       setActiveTab('checklist');
-      notify(`Laporan ${saved.shift} (${saved.date}) dimuat`);
+      notify(`Laporan ${normalized.shift} (${normalized.date}) dimuat`);
     },
     [notify]
   );
@@ -1015,6 +1101,9 @@ export function App() {
             onPreviewPhoto={(photo, title) =>
               setLightboxState({ photo, title })
             }
+            photoTimestampMode={photoTimestampMode}
+            onChangePhotoTimestampMode={handleChangePhotoTimestampMode}
+            onConfirmTimestamp={requestPhotoTimestamp}
           />
         )}
 
@@ -1026,6 +1115,9 @@ export function App() {
             onPreviewPhoto={(photo, title) =>
               setLightboxState({ photo, title })
             }
+            photoTimestampMode={photoTimestampMode}
+            onChangePhotoTimestampMode={handleChangePhotoTimestampMode}
+            onConfirmTimestamp={requestPhotoTimestamp}
           />
         )}
 
@@ -1136,6 +1228,16 @@ export function App() {
         title={lightboxState?.title}
         onClose={() => setLightboxState(null)}
       />
+
+      {/* Photo Timestamp Choice Modal */}
+      {timestampPrompt && (
+        <TimestampPromptModal
+          fileCount={timestampPrompt.fileCount}
+          previewUrl={timestampPrompt.previewUrl}
+          onConfirm={handleConfirmTimestampPrompt}
+          onCancel={handleCancelTimestampPrompt}
+        />
+      )}
     </div>
   );
 }

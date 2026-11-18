@@ -41,7 +41,9 @@ export interface ChecklistSection {
   subGroups: ChecklistSubGroup[];
 }
 
-export type ShiftType = 'Pagi' | 'Siang' | 'Sore' | 'Malam';
+export type ShiftType = 'PAGI' | 'SORE' | 'MALAM';
+
+export type PhotoTimestampMode = 'ask' | 'on' | 'off';
 
 export interface ChecklistReport {
   id: string;

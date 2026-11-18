@@ -33,11 +33,11 @@ export async function generatePdfReport(
     }
   };
 
-  // Header Banner
-  doc.setFillColor(54, 133, 192); // #3685c0
+  // Header Banner — Modern Deep Blue
+  doc.setFillColor(19, 75, 138); // #134b8a
   doc.roundedRect(margin, y, contentW, 28, 3, 3, 'F');
 
-  doc.setTextColor(224, 242, 254);
+  doc.setTextColor(165, 243, 252);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8.5);
   doc.text('LAPORAN PREVENTIVE MAINTENANCE HARIAN', margin + 5, y + 7);
@@ -62,29 +62,32 @@ export async function generatePdfReport(
   );
   y += 33;
 
-  // Summary Stats Row
+  // Summary Stats Row — Clear Green OK & Red Not OK
   const boxW = (contentW - 9) / 4;
   const kpis = [
-    { label: 'Total Item', value: String(stats.totalItems), r: 241, g: 245, b: 249, tr: 15, tg: 23, tb: 42 },
-    { label: 'OK / Aktif', value: String(stats.okCount), r: 220, g: 252, b: 231, tr: 21, tg: 128, tb: 61 },
+    { label: 'Total Item', value: String(stats.totalItems), r: 241, g: 245, b: 249, lr: 71, lg: 85, lb: 105, tr: 15, tg: 23, tb: 42 },
+    { label: 'OK / Aktif', value: String(stats.okCount), r: 5, g: 150, b: 105, lr: 236, lg: 253, lb: 245, tr: 255, tg: 255, tb: 255 },
     {
       label: 'Not OK',
       value: String(stats.notOkCount),
-      r: stats.notOkCount > 0 ? 254 : 241,
-      g: stats.notOkCount > 0 ? 226 : 245,
-      b: stats.notOkCount > 0 ? 226 : 249,
-      tr: stats.notOkCount > 0 ? 185 : 100,
-      tg: stats.notOkCount > 0 ? 28 : 116,
-      tb: stats.notOkCount > 0 ? 28 : 139,
+      r: stats.notOkCount > 0 ? 220 : 225,
+      g: stats.notOkCount > 0 ? 38 : 29,
+      b: stats.notOkCount > 0 ? 38 : 72,
+      lr: 255,
+      lg: 241,
+      lb: 242,
+      tr: 255,
+      tg: 255,
+      tb: 255,
     },
-    { label: 'Foto Bukti', value: String(stats.totalPhotos), r: 224, g: 242, b: 254, tr: 3, tg: 105, tb: 161 },
+    { label: 'Foto Bukti', value: String(stats.totalPhotos), r: 224, g: 242, b: 254, lr: 3, lg: 105, lb: 161, tr: 3, tg: 105, tb: 161 },
   ];
 
   kpis.forEach((kpi, idx) => {
     const bx = margin + idx * (boxW + 3);
     doc.setFillColor(kpi.r, kpi.g, kpi.b);
     doc.roundedRect(bx, y, boxW, 15, 2, 2, 'F');
-    doc.setTextColor(71, 85, 105);
+    doc.setTextColor(kpi.lr, kpi.lg, kpi.lb);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7.5);
     doc.text(kpi.label.toUpperCase(), bx + 3.5, y + 5.5);
