@@ -60,8 +60,8 @@ async function prepareOcrCrops(source: File | string): Promise<string[]> {
         Math.round(h * 0.16),
         Math.round(w * 0.35),
         Math.round(h * 0.74),
-        3.5,
-        1600
+        2.2,
+        1100
       );
       const bodyCrop = renderCropToPngDataUrl(
         img,
@@ -69,21 +69,43 @@ async function prepareOcrCrops(source: File | string): Promise<string[]> {
         Math.round(h * 0.12),
         w,
         Math.round(h * 0.78),
-        2.5,
-        2200
+        1.8,
+        1400
       );
       return [rightColCrop, bodyCrop].filter(Boolean);
     }
 
     // Portrait or cropped table screenshot
-    const scale = w < 600 ? 4 : 3;
-    const fullCrop = renderCropToPngDataUrl(img, 0, 0, w, h, scale, 1800);
+    const scale = w < 600 ? 2.5 : 2;
+    const fullCrop = renderCropToPngDataUrl(img, 0, 0, w, h, scale, 1200);
     return fullCrop ? [fullCrop] : [];
   } finally {
     if (objectUrl) {
       URL.revokeObjectURL(objectUrl);
     }
   }
+}
+
+let serverOcrAvailable: boolean | null = null;
+let cachedWorkerPromise: Promise<
+  import('tesseract.js').Worker
+> | null = null;
+
+async function getOcrWorker(): Promise<import('tesseract.js').Worker> {
+  if (!cachedWorkerPromise) {
+    cachedWorkerPromise = (async () => {
+      const { createWorker } = await import('tesseract.js');
+      const worker = await createWorker('eng');
+      await worker.setParameters({
+        tessedit_char_whitelist: '0123456789/: -',
+      });
+      return worker;
+    })().catch((err) => {
+      cachedWorkerPromise = null;
+      throw err;
+    });
+  }
+  return cachedWorkerPromise;
 }
 
 export async function extractLatestTimestampFromSource(
@@ -94,41 +116,51 @@ export async function extractLatestTimestampFromSource(
     return { latest: null, candidates: [] };
   }
 
-  // Prefer server-side Tesseract worker so phones don't need to download traineddata over mobile data
-  try {
-    const res = await fetch('/api/ocr-timestamp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ images: crops }),
-    });
-    if (res.ok) {
-      const data = (await res.json()) as OcrExtractResult;
-      return {
-        latest: data.latest ?? null,
-        candidates: Array.isArray(data.candidates) ? data.candidates : [],
-      };
+  // Prefer server-side Tesseract worker if available, but skip immediately after a 404 (e.g. on Netlify)
+  if (serverOcrAvailable !== false) {
+    try {
+      const controller = new AbortController();
+      const timer = window.setTimeout(() => controller.abort(), 2000);
+      const res = await fetch('/api/ocr-timestamp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ images: [crops[0]] }),
+        signal: controller.signal,
+      }).finally(() => window.clearTimeout(timer));
+
+      if (res.ok) {
+        serverOcrAvailable = true;
+        const data = (await res.json()) as OcrExtractResult;
+        if (data.latest || crops.length === 1) {
+          return {
+            latest: data.latest ?? null,
+            candidates: Array.isArray(data.candidates) ? data.candidates : [],
+          };
+        }
+      } else if (res.status === 404) {
+        serverOcrAvailable = false;
+      }
+    } catch {
+      // Fallback to client-side OCR below
     }
-  } catch {
-    // Fallback to client-side OCR below
   }
 
-  // Browser fallback via tesseract.js
+  // Browser fallback via cached tesseract.js worker with early-exit on first matching crop
   try {
-    const { createWorker } = await import('tesseract.js');
-    const worker = await createWorker('eng');
-    try {
-      const allCandidates: ParsedTimestamp[] = [];
-      for (const crop of crops) {
-        const result = await worker.recognize(crop);
-        allCandidates.push(...extractTimestampsFromText(result.data.text));
+    const worker = await getOcrWorker();
+    const allCandidates: ParsedTimestamp[] = [];
+    for (const crop of crops) {
+      const result = await worker.recognize(crop);
+      const found = extractTimestampsFromText(result.data.text);
+      if (found.length > 0) {
+        allCandidates.push(...found);
+        break;
       }
-      return {
-        latest: pickLatestTimestamp(allCandidates),
-        candidates: allCandidates,
-      };
-    } finally {
-      await worker.terminate();
     }
+    return {
+      latest: pickLatestTimestamp(allCandidates),
+      candidates: allCandidates,
+    };
   } catch {
     return { latest: null, candidates: [] };
   }
