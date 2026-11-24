@@ -265,11 +265,11 @@ export async function generateCollageImage(
       : effectiveCols === 4
       ? 190
       : 160;
-  const cardPad = isDenseGrid ? 10 : 20;
-  const titleFontSize = isDenseGrid ? 18 : effectiveCols === 1 ? 36 : 28;
-  const titleLineHeight = isDenseGrid ? 23 : effectiveCols === 1 ? 46 : 36;
-  const noteFontSize = isDenseGrid ? 14 : effectiveCols === 1 ? 24 : 19;
-  const noteLineHeight = isDenseGrid ? 18 : effectiveCols === 1 ? 32 : 25;
+  const cardPad = isDenseGrid ? 10 : 24;
+  const titleFontSize = isDenseGrid ? 22 : effectiveCols === 1 ? 54 : 36;
+  const titleLineHeight = isDenseGrid ? 28 : effectiveCols === 1 ? 66 : 44;
+  const noteFontSize = isDenseGrid ? 16 : effectiveCols === 1 ? 34 : 24;
+  const noteLineHeight = isDenseGrid ? 21 : effectiveCols === 1 ? 44 : 32;
 
   if (showPhotos) {
     if (photos.length > 0) {
@@ -624,7 +624,7 @@ export async function generateCollageImage(
         let textY =
           card.y +
           imgH +
-          (isDenseGrid ? 24 : effectiveCols === 1 ? 44 : 34);
+          (isDenseGrid ? 28 : effectiveCols === 1 ? 62 : 42);
 
         ctx.fillStyle = '#0f172a';
         ctx.font = `bold ${titleFontSize}px system-ui, -apple-system, sans-serif`;
