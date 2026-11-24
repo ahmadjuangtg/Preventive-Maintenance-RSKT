@@ -2,6 +2,7 @@ import {
   Calendar,
   Camera,
   Cloud,
+  Copy,
   FolderOpen,
   History,
   RefreshCw,
@@ -16,6 +17,7 @@ interface HistoryTabProps {
   isRefreshing?: boolean;
   onRefreshHistory: () => void;
   onLoadReport: (report: ChecklistReport) => void;
+  onCopyChecklist: (report: ChecklistReport) => void;
   onDeleteReport: (reportId: string) => void;
 }
 
@@ -24,6 +26,7 @@ export function HistoryTab({
   isRefreshing = false,
   onRefreshHistory,
   onLoadReport,
+  onCopyChecklist,
   onDeleteReport,
 }: HistoryTabProps) {
   return (
@@ -123,14 +126,26 @@ export function HistoryTab({
                     </span>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => onLoadReport(item)}
-                    className="inline-flex items-center gap-1 rounded-xl bg-[#3685c0] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#2b6ca3] active:scale-95"
-                  >
-                    <FolderOpen className="h-3.5 w-3.5" />
-                    <span>Muat</span>
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => onCopyChecklist(item)}
+                      title="Salin daftar checklist ini sebagai template baru (status di-reset ke OK & foto dikosongkan)"
+                      className="inline-flex items-center gap-1 rounded-xl border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-100 active:scale-95"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      <span>Copy Checklist</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => onLoadReport(item)}
+                      className="inline-flex items-center gap-1 rounded-xl bg-[#3685c0] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#2b6ca3] active:scale-95"
+                    >
+                      <FolderOpen className="h-3.5 w-3.5" />
+                      <span>Muat</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             );

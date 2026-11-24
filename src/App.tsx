@@ -1038,6 +1038,32 @@ export function App() {
     [notify]
   );
 
+  const handleCopyChecklistFromHistory = useCallback(
+    (saved: ChecklistReport) => {
+      const today = getTodayIsoDate();
+      const normalized = normalizeReportShift(saved);
+      const copiedSections = resequenceSections(
+        resetSectionsFromTemplate(normalized.sections, today)
+      );
+      const fresh = createDefaultReport(today);
+      const copiedReport: ChecklistReport = {
+        ...fresh,
+        site: normalized.site || fresh.site,
+        sections: copiedSections,
+      };
+      setEditingHistoryId(null);
+      setCustomTemplate(copiedSections);
+      void saveCustomTemplate(copiedSections);
+      setReport(copiedReport);
+      setActiveTab('checklist');
+      const total = getReportStats(copiedReport).totalItems;
+      notify(
+        `Checklist (${total} item) disalin sebagai template baru untuk hari ini`
+      );
+    },
+    [notify]
+  );
+
   const handleDeleteFromHistory = useCallback(
     async (reportId: string) => {
       const updated = await deleteReportFromHistory(reportId);
@@ -1150,6 +1176,7 @@ export function App() {
             isRefreshing={isRefreshingHistory}
             onRefreshHistory={() => void handleRefreshHistory()}
             onLoadReport={handleLoadFromHistory}
+            onCopyChecklist={handleCopyChecklistFromHistory}
             onDeleteReport={handleDeleteFromHistory}
           />
         )}
