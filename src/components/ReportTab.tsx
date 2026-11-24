@@ -271,7 +271,8 @@ export function ReportTab({ report, totalPhotos, onNotify }: ReportTabProps) {
   };
 
   const shareToWhatsAppWeb = async (
-    items: Array<{ url: string; name: string }>
+    items: Array<{ url: string; name: string }>,
+    customText?: string
   ) => {
     if (items.length === 0) return;
     setLoadingOverlay({
@@ -303,7 +304,9 @@ export function ReportTab({ report, totalPhotos, onNotify }: ReportTabProps) {
       }, i * 180);
     });
 
-    const summaryText = `Berikut Resume Update Checklist ${report.shift} Site ${report.site} (${report.date})`;
+    const summaryText =
+      customText ??
+      `Berikut Resume Update Checklist ${report.shift} Site ${report.site} (${report.date})`;
     window.open(
       `https://web.whatsapp.com/send?text=${encodeURIComponent(summaryText)}`,
       '_blank',
@@ -751,29 +754,51 @@ export function ReportTab({ report, totalPhotos, onNotify }: ReportTabProps) {
                             {captionText}
                           </span>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            void copyCaptionText(entry.photo.id, captionText)
-                          }
-                          className={`inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-bold transition active:scale-95 ${
-                            isCopied
-                              ? 'bg-emerald-600 text-white'
-                              : 'border border-sky-200 bg-white text-[#134b8a] hover:bg-sky-50'
-                          }`}
-                        >
-                          {isCopied ? (
-                            <>
-                              <Check className="h-3 w-3" />
-                              <span>Tersalin</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="h-3 w-3" />
-                              <span>Copy</span>
-                            </>
-                          )}
-                        </button>
+                        <div className="flex shrink-0 items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void copyCaptionText(entry.photo.id, captionText)
+                            }
+                            className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-bold transition active:scale-95 ${
+                              isCopied
+                                ? 'bg-emerald-600 text-white'
+                                : 'border border-sky-200 bg-white text-[#134b8a] hover:bg-sky-50'
+                            }`}
+                          >
+                            {isCopied ? (
+                              <>
+                                <Check className="h-3 w-3" />
+                                <span>Tersalin</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-3 w-3" />
+                                <span>Copy</span>
+                              </>
+                            )}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void shareToWhatsAppWeb(
+                                [
+                                  {
+                                    url: entry.photo.dataUrl,
+                                    name: `${fileSlug}_${String(idx + 1).padStart(2, '0')}.jpg`,
+                                  },
+                                ],
+                                captionText
+                              )
+                            }
+                            title="Share foto ini beserta caption-nya ke WhatsApp Web"
+                            className="inline-flex items-center gap-1 rounded-lg bg-[#25D366] px-2 py-1 text-[11px] font-bold text-white shadow-2xs transition hover:bg-[#1fb858] active:scale-95"
+                          >
+                            <Share2 className="h-3 w-3" />
+                            <span>Share WA</span>
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
