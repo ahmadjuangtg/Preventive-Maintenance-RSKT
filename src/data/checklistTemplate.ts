@@ -288,7 +288,9 @@ export function getToggleTargetStatus(item: ChecklistItem): CheckStatus {
   if (item.statusMode === 'aktif_tidak_aktif') {
     return item.status === 'Aktif' ? 'Tidak Aktif' : 'Aktif';
   }
-  return item.status === 'OK' ? 'Not OK' : 'OK';
+  if (item.status === 'OK') return 'Not OK';
+  if (item.status === 'Not OK') return 'OFF';
+  return 'OK';
 }
 
 export function flattenItems(report: ChecklistReport): FlattenedItemEntry[] {

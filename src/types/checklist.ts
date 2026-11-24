@@ -1,4 +1,4 @@
-export type CheckStatus = 'OK' | 'Not OK' | 'Aktif' | 'Tidak Aktif';
+export type CheckStatus = 'OK' | 'Not OK' | 'OFF' | 'Aktif' | 'Tidak Aktif';
 export type StatusMode = 'ok_not_ok' | 'aktif_tidak_aktif';
 
 export interface PhotoAttachment {

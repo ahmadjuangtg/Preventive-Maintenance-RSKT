@@ -619,6 +619,8 @@ export function ChecklistTab({
                 className={`min-w-[82px] rounded-lg px-2.5 py-1.5 text-xs font-bold shadow-xs transition active:scale-95 ${
                   positive
                     ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                    : item.status === 'OFF'
+                    ? 'bg-slate-600 text-white hover:bg-slate-700'
                     : 'bg-red-600 text-white hover:bg-red-700'
                 }`}
               >
@@ -1029,6 +1031,8 @@ export function ChecklistTab({
                         className={`min-w-[82px] rounded-lg px-2.5 py-1.5 text-xs font-bold text-white shadow-xs transition active:scale-95 ${
                           positive
                             ? 'bg-emerald-600 hover:bg-emerald-700'
+                            : item.status === 'OFF'
+                            ? 'bg-slate-600 hover:bg-slate-700'
                             : 'bg-red-600 hover:bg-red-700'
                         }`}
                       >
