@@ -168,6 +168,21 @@ export function ReportTab({ report, totalPhotos, onNotify }: ReportTabProps) {
     link.click();
   };
 
+  const [copiedCaptionId, setCopiedCaptionId] = useState<string | null>(null);
+
+  const copyCaptionText = async (id: string, text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedCaptionId(id);
+      onNotify('Caption disalin — tinggal Paste di WhatsApp!');
+      window.setTimeout(() => {
+        setCopiedCaptionId((prev) => (prev === id ? null : prev));
+      }, 2000);
+    } catch {
+      onNotify('Gagal menyalin caption');
+    }
+  };
+
   const handleDownloadAll = async () => {
     const list: Array<{ url: string; name: string }> = [];
     if (layoutMode === 'photos_only') {
@@ -666,6 +681,106 @@ export function ReportTab({ report, totalPhotos, onNotify }: ReportTabProps) {
               </div>
             )}
           </section>
+
+          {/* Copyable Photo Captions for WhatsApp */}
+          {layoutMode === 'photos_only' && totalPhotos > 0 && (() => {
+            const photoEntries = flattenPhotos(report);
+            const allCaptionsText = photoEntries
+              .map((entry, idx) => {
+                const label = entry.subGroupTitle
+                  ? `${entry.subGroupTitle} — ${entry.itemLabel}`
+                  : entry.itemLabel;
+                const extra = entry.photo.caption?.trim()
+                  ? ` (${entry.photo.caption.trim()})`
+                  : '';
+                return `${idx + 1}. ${label} — ${entry.status}${extra}`;
+              })
+              .join('\n');
+
+            return (
+              <section className="space-y-2.5 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-900">
+                      Caption Foto untuk WhatsApp ({photoEntries.length})
+                    </h3>
+                    <p className="text-[11px] text-slate-500">
+                      Klik Copy lalu Paste di kolom caption saat kirim foto ke WA
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void copyCaptionText('all', allCaptionsText)}
+                    className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-slate-900 px-2.5 py-1.5 text-[11px] font-bold text-white hover:bg-slate-800 active:scale-95"
+                  >
+                    {copiedCaptionId === 'all' ? (
+                      <>
+                        <Check className="h-3.5 w-3.5 text-emerald-400" />
+                        <span>Tersalin</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3.5 w-3.5" />
+                        <span>Copy Semua</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <div className="max-h-60 space-y-1.5 overflow-y-auto pr-1">
+                  {photoEntries.map((entry, idx) => {
+                    const label = entry.subGroupTitle
+                      ? `${entry.subGroupTitle} — ${entry.itemLabel}`
+                      : entry.itemLabel;
+                    const extra = entry.photo.caption?.trim()
+                      ? ` (${entry.photo.caption.trim()})`
+                      : '';
+                    const captionText = `${label} — ${entry.status}${extra}`;
+                    const isCopied = copiedCaptionId === entry.photo.id;
+
+                    return (
+                      <div
+                        key={entry.photo.id}
+                        className="flex items-center justify-between gap-2 rounded-xl border border-slate-200/80 bg-slate-50 px-2.5 py-1.5"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <span className="text-[11px] font-bold text-slate-500">
+                            #{idx + 1}{' '}
+                          </span>
+                          <span className="text-xs font-semibold text-slate-800">
+                            {captionText}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void copyCaptionText(entry.photo.id, captionText)
+                          }
+                          className={`inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-bold transition active:scale-95 ${
+                            isCopied
+                              ? 'bg-emerald-600 text-white'
+                              : 'border border-sky-200 bg-white text-[#134b8a] hover:bg-sky-50'
+                          }`}
+                        >
+                          {isCopied ? (
+                            <>
+                              <Check className="h-3 w-3" />
+                              <span>Tersalin</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="h-3 w-3" />
+                              <span>Copy</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })()}
 
           {/* Preview: Photo Report Pages */}
           {images.photoPages.map((url, idx) => {

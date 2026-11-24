@@ -265,11 +265,11 @@ export async function generateCollageImage(
       : effectiveCols === 4
       ? 190
       : 160;
-  const cardPad = isDenseGrid ? 10 : 15;
-  const titleFontSize = isDenseGrid ? 14 : 18;
-  const titleLineHeight = isDenseGrid ? 18 : 24;
-  const noteFontSize = isDenseGrid ? 12 : 15;
-  const noteLineHeight = isDenseGrid ? 15 : 20;
+  const cardPad = isDenseGrid ? 10 : 18;
+  const titleFontSize = isDenseGrid ? 16 : effectiveCols === 1 ? 26 : 22;
+  const titleLineHeight = isDenseGrid ? 21 : effectiveCols === 1 ? 34 : 28;
+  const noteFontSize = isDenseGrid ? 13 : effectiveCols === 1 ? 20 : 17;
+  const noteLineHeight = isDenseGrid ? 17 : effectiveCols === 1 ? 26 : 22;
 
   if (showPhotos) {
     if (photos.length > 0) {
@@ -621,19 +621,19 @@ export async function generateCollageImage(
           card.y + (isDenseGrid ? 23 : 33)
         );
 
-        let textY = card.y + imgH + (isDenseGrid ? 18 : 26);
+        let textY = card.y + imgH + (isDenseGrid ? 18 : 28);
         const breadcrumbText = card.entry.subGroupTitle
           ? `${card.entry.sectionTitle} › ${card.entry.subGroupTitle}`
           : card.entry.sectionTitle;
 
         ctx.fillStyle = '#256394';
-        ctx.font = `bold ${isDenseGrid ? 10.5 : 13}px system-ui, -apple-system, sans-serif`;
+        ctx.font = `bold ${isDenseGrid ? 12 : effectiveCols === 1 ? 17 : 15}px system-ui, -apple-system, sans-serif`;
         ctx.fillText(
           truncateText(ctx, breadcrumbText.toUpperCase(), card.w - cardPad * 2),
           card.x + cardPad,
           textY
         );
-        textY += isDenseGrid ? 17 : 24;
+        textY += isDenseGrid ? 20 : effectiveCols === 1 ? 30 : 26;
 
         ctx.fillStyle = '#0f172a';
         ctx.font = `bold ${titleFontSize}px system-ui, -apple-system, sans-serif`;
