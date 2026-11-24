@@ -73,6 +73,7 @@ export function App() {
   const [isRefreshingHistory, setIsRefreshingHistory] = useState(false);
   const [isLoadingSample, setIsLoadingSample] = useState(false);
   const [reportKey, setReportKey] = useState(0);
+  const [editingHistoryId, setEditingHistoryId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [photoTimestampMode, setPhotoTimestampMode] =
     useState<PhotoTimestampMode>(() => {
@@ -941,6 +942,7 @@ export function App() {
     setIsLoadingSample(true);
     window.setTimeout(() => {
       const sample = createSampleReport('full_70');
+      setEditingHistoryId(null);
       setReport(sample);
       setReportKey((k) => k + 1);
       setIsLoadingSample(false);
@@ -961,6 +963,7 @@ export function App() {
       if (!confirmed) return;
     }
     const today = getTodayIsoDate();
+    setEditingHistoryId(null);
     if (customTemplate && customTemplate.length > 0) {
       const fresh = createDefaultReport(today);
       setReport({
@@ -976,20 +979,30 @@ export function App() {
   const handleSaveHistory = useCallback(async () => {
     setIsSaving(true);
     try {
+      const reportToSave: ChecklistReport = editingHistoryId
+        ? { ...report, id: editingHistoryId }
+        : {
+            ...report,
+            id: `report-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          };
       const [result] = await Promise.all([
-        saveReportToHistory(report),
+        saveReportToHistory(reportToSave),
         new Promise<void>((resolve) => window.setTimeout(resolve, 550)),
       ]);
       setHistory(result.history.map(normalizeReportShift));
       notify(
         result.syncedToServer
-          ? 'Laporan tersimpan ke server bersama (bisa diakses semua orang)!'
-          : 'Laporan tersimpan ke penyimpanan lokal perangkat!'
+          ? editingHistoryId
+            ? 'Riwayat lama diperbarui & tersimpan ke server bersama!'
+            : 'Laporan baru tersimpan ke server bersama (bisa diakses semua orang)!'
+          : editingHistoryId
+          ? 'Riwayat lama diperbarui di penyimpanan lokal perangkat!'
+          : 'Laporan baru tersimpan di penyimpanan lokal perangkat!'
       );
     } finally {
       setIsSaving(false);
     }
-  }, [notify, report]);
+  }, [editingHistoryId, notify, report]);
 
   const handleRefreshHistory = useCallback(async () => {
     setIsRefreshingHistory(true);
@@ -1017,6 +1030,7 @@ export function App() {
   const handleLoadFromHistory = useCallback(
     (saved: ChecklistReport) => {
       const normalized = normalizeReportShift(saved);
+      setEditingHistoryId(normalized.id);
       setReport(normalized);
       setActiveTab('checklist');
       notify(`Laporan ${normalized.shift} (${normalized.date}) dimuat`);
