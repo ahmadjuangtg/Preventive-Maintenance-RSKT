@@ -172,15 +172,27 @@ export function ReportTab({ report, totalPhotos, onNotify }: ReportTabProps) {
     const list: Array<{ url: string; name: string }> = [];
     if (layoutMode === 'photos_only') {
       const allPhotos = flattenPhotos(report);
-      allPhotos.forEach((entry, idx) => {
-        const safeLabel = (entry.itemLabel || entry.sectionTitle || 'Foto')
+      if (allPhotos.length === 0) return;
+      setLoadingOverlay({
+        visible: true,
+        title: `Menyiapkan ${allPhotos.length} Gambar...`,
+        subtitle: 'Merender setiap foto beserta caption-nya',
+      });
+      const singlePages = await generatePhotoPages(report, {
+        columns: 1,
+        maxPerPage: 1,
+        format,
+      });
+      singlePages.forEach((url, idx) => {
+        const entry = allPhotos[idx];
+        const safeLabel = (entry?.itemLabel || entry?.sectionTitle || 'Foto')
           .replace(/[^a-zA-Z0-9_-]+/g, '_')
           .replace(/^_+|_+$/g, '')
           .slice(0, 40);
         const num = String(idx + 1).padStart(2, '0');
         list.push({
-          url: entry.photo.dataUrl,
-          name: `${fileSlug}_${num}_${safeLabel}.jpg`,
+          url,
+          name: `${fileSlug}_${num}_${safeLabel}.${ext}`,
         });
       });
     } else {
