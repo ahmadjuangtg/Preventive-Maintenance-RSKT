@@ -233,7 +233,7 @@ export async function generateCollageImage(
   }
 
   // 1. Header height
-  const headerH = 205;
+  const headerH = 142;
   let cursorY = headerH + 24;
 
   // 2. Issues alert box height (show on first page or status-only/combined)
@@ -502,64 +502,6 @@ export async function generateCollageImage(
     padX,
     116
   );
-
-  // KPI Pills — High Contrast OK (Green) & NOT OK (Red)
-  const kpis = [
-    {
-      label: 'TOTAL ITEM',
-      value: String(stats.totalItems),
-      bg: 'rgba(255,255,255,0.16)',
-      border: 'rgba(255,255,255,0.3)',
-      labelColor: '#e2e8f0',
-      textColor: '#ffffff',
-    },
-    {
-      label: 'OK / AKTIF',
-      value: String(stats.okCount),
-      bg: '#059669',
-      border: '#6ee7b7',
-      labelColor: '#ecfdf5',
-      textColor: '#ffffff',
-    },
-    {
-      label: 'NOT OK',
-      value: String(stats.notOkCount),
-      bg: stats.notOkCount > 0 ? '#dc2626' : '#e11d48',
-      border: stats.notOkCount > 0 ? '#fde68a' : '#fda4af',
-      labelColor: '#fff1f2',
-      textColor: '#ffffff',
-    },
-    {
-      label: 'FOTO BUKTI',
-      value: String(stats.totalPhotos),
-      bg: 'rgba(14,165,233,0.28)',
-      border: 'rgba(125,211,252,0.65)',
-      labelColor: '#e0f2fe',
-      textColor: '#ffffff',
-    },
-  ];
-
-  const pillW = 165;
-  const pillH = 54;
-  const pillGap = 14;
-  kpis.forEach((kpi, i) => {
-    const px = padX + i * (pillW + pillGap);
-    const py = 136;
-    drawRoundedRect(ctx, px, py, pillW, pillH, 10);
-    ctx.fillStyle = kpi.bg;
-    ctx.fill();
-    ctx.strokeStyle = kpi.border;
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    ctx.fillStyle = kpi.labelColor;
-    ctx.font = 'bold 11px system-ui, -apple-system, sans-serif';
-    ctx.fillText(kpi.label, px + 14, py + 20);
-
-    ctx.fillStyle = kpi.textColor;
-    ctx.font = 'bold 22px system-ui, -apple-system, sans-serif';
-    ctx.fillText(kpi.value, px + 14, py + 44);
-  });
 
   // Issues Box
   let drawY = headerH + 24;

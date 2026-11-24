@@ -11,6 +11,7 @@ import {
   Share2,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { flattenPhotos } from '../data/checklistTemplate';
 import type { ChecklistReport } from '../types/checklist';
 import {
   generateCollageImage,
@@ -169,19 +170,34 @@ export function ReportTab({ report, totalPhotos, onNotify }: ReportTabProps) {
 
   const handleDownloadAll = async () => {
     const list: Array<{ url: string; name: string }> = [];
-    images.photoPages.forEach((url, idx) => {
-      const suffix =
-        images.photoPages.length > 1 ? `_Foto_Bag${idx + 1}` : '_Foto';
-      list.push({ url, name: `${fileSlug}${suffix}.${ext}` });
-    });
-    if (images.statusImage) {
-      list.push({ url: images.statusImage, name: `${fileSlug}_List.${ext}` });
-    }
-    if (images.combinedImage) {
-      list.push({
-        url: images.combinedImage,
-        name: `${fileSlug}_Lengkap.${ext}`,
+    if (layoutMode === 'photos_only') {
+      const allPhotos = flattenPhotos(report);
+      allPhotos.forEach((entry, idx) => {
+        const safeLabel = (entry.itemLabel || entry.sectionTitle || 'Foto')
+          .replace(/[^a-zA-Z0-9_-]+/g, '_')
+          .replace(/^_+|_+$/g, '')
+          .slice(0, 40);
+        const num = String(idx + 1).padStart(2, '0');
+        list.push({
+          url: entry.photo.dataUrl,
+          name: `${fileSlug}_${num}_${safeLabel}.jpg`,
+        });
       });
+    } else {
+      images.photoPages.forEach((url, idx) => {
+        const suffix =
+          images.photoPages.length > 1 ? `_Foto_Bag${idx + 1}` : '_Foto';
+        list.push({ url, name: `${fileSlug}${suffix}.${ext}` });
+      });
+      if (images.statusImage) {
+        list.push({ url: images.statusImage, name: `${fileSlug}_List.${ext}` });
+      }
+      if (images.combinedImage) {
+        list.push({
+          url: images.combinedImage,
+          name: `${fileSlug}_Lengkap.${ext}`,
+        });
+      }
     }
     if (list.length === 0) return;
 
@@ -620,7 +636,9 @@ export function ReportTab({ report, totalPhotos, onNotify }: ReportTabProps) {
                 >
                   <Download className="h-4 w-4" />
                   <span>
-                    Download {totalGeneratedCount > 1 ? `Semua (${totalGeneratedCount})` : 'Gambar'}
+                    {layoutMode === 'photos_only' && totalPhotos > 0
+                      ? `Download Semua Foto (${totalPhotos})`
+                      : `Download ${totalGeneratedCount > 1 ? `Semua (${totalGeneratedCount})` : 'Gambar'}`}
                   </span>
                 </button>
 
